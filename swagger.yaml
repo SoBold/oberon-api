@@ -1,224 +1,992 @@
----
-swagger: '2.0'
+openapi: 3.0.1
 info:
-    version: '0.1.0'
-    title: Oberon Plugin API
-securityDefinitions:
-    NonceAuthorization:
-        type: apiKey
-        name: X-WP-Nonce
-        in: header
-paths:
-    /v1/subscriptions:
-        post:
-            tags:
-                - Subscriptions
-            summary: Updates or Creates a Subscription
-            description: Updates a subscription by id or creates new if no id is set
-            parameters:
-                - in: body
-                  name: subscription
-                  description: The subscription to create/update.
-                  schema:
-                      type: object
-                      properties:
-                          user_id:
-                              type: integer
-                          status:
-                              type: string
-                          membership_id:
-                              type: string
-                          price:
-                              type: integer
-                          tax_enabled:
-                              type: boolean
-            responses:
-                200:
-                    description: Successful response
-                    schema:
-                        $ref: '#/components/schemas/Subscription'
-        get:
-            tags:
-                - Subscriptions
-            summary: Get a subscription by ID or search term (Admin)
-            description: Returns a subscription object by its unique ID.
-            parameters:
-                - name: subscription_id
-                  in: query
-                  description: The ID of the subscription to retrieve.
-                  required: false
-                  type: integer
-                - name: search
-                  in: query
-                  description: Search by user or subscription id
-                  required: false
-                  type: string
-            responses:
-                200:
-                    description: Successful response
-                    schema:
-                        type: object
-                        properties:
-                            totalCount:
-                                type: integer
-                                description: The amount of subscriptions found
-                            subscriptions:
-                                $ref: '#/components/schemas/Subscription'
-                400:
-                    description: Bad Request - Invalid ID or query format/empty.
-                404:
-                    description: Not Found - Subscription with the provided ID does not exist.
-                500:
-                    description: Subscription search failed
-        delete:
-            tags:
-                - Subscriptions
-            summary: Delete a subscription by ID
-            description: Allows a subscription to be deleted via an api endpoint by ID
-            parameters:
-                - name: subscriptionId
-                  in: query
-                  description: The ID of the subscription
-                  required: true
-                  type: integer
-            responses:
-                200:
-                    description: Successfully deleted
-                    schema:
-                        type: boolean
-                404:
-                    description: No subscription was found/specified
-    /v1/transactions:
-        post:
-            tags:
-                - Transactions
-            summary: Updates or Creates a Transaction
-            parameters:
-                - in: body
-                  name: transaction
-                  description: The transaction to create/update
-                  schema:
-                      $ref: '#/components/schemas/Transaction'
-            responses:
-                200:
-                    description: Successfully created/updated
-                    schema:
-                        $ref: '#/components/schemas/Transaction'
-        delete:
-            tags:
-                - Transactions
-            summary: Delete a transaction by ID
-            description: Allows a transaction to be deleted via an api endpoint by ID
-            parameters:
-                - name: transactionId
-                  in: query
-                  description: The ID of the transaction
-                  required: true
-                  type: integer
-            responses:
-                200:
-                    description: Successfully deleted
-                    schema:
-                        type: boolean
-                404:
-                    description: No transaction was found/specified
-    /v1/members:
-        get:
-            tags:
-                - Members
-            summary: Get a member by search term (Admin)
-            description: Returns an array of WP_User object
-            parameters:
-                - name: search
-                  in: query
-                  description: The term of the member to retrieve.
-                  required: false
-                  type: string
-            responses:
-                200:
-                    description: Successful response
-                    schema:
-                        type: object
-                        properties:
-                            totalCount:
-                                type: integer
-                                description: The amount of members found
-                            subscriptions:
-                                $ref: '#/components/schemas/Member'
-                400:
-                    description: Bad Request - Invalid ID or query format/empty.
-                404:
-                    description: Not Found
-                500:
-                    description: Member search failed
-
+  title: Oberon Plugin API
+  version: 0.1.0
+servers:
+- url: /
 tags:
-    - name: Subscriptions
-      description: 'Subscription endpoints'
-    - name: Transactions
-      description: 'Transaction endpoints'
-    - name: Members
-      description: 'Member endpoints'
-
-components:
-    schemas:
-        Subscription:
-            properties:
-                id:
-                    type: integer
+- name: Subscriptions
+  description: Subscription endpoints
+- name: Transactions
+  description: Transaction endpoints
+- name: Members
+  description: Member endpoints
+- name: Authentication
+  description: Authentication endpoints
+- name: Verification
+  description: Verification endpoints
+- name: Account Password
+  description: Account Password endpoints
+- name: Account
+  description: Account endpoints
+- name: Signup
+  description: Signup endpoints
+- name: Stripe
+  description: Stripe endpoints
+paths:
+  '/v1/subscriptions':
+    get:
+      tags:
+      - Subscriptions
+      summary: Get a subscription by ID or search term (Admin)
+      description: Returns a subscription object by its unique ID.
+      parameters:
+      - name: subscription_id
+        in: query
+        description: The ID of the subscription to retrieve.
+        schema:
+          type: integer
+      - name: search
+        in: query
+        description: Search by user or subscription id
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful response
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Subscription'
+        "400":  
+          description: Bad Request - Invalid ID or query format/empty.
+          content: {}
+        "404":
+          description: Not Found - Subscription with the provided ID does not exist.
+          content: {}
+        "500":
+          description: Subscription search failed
+          content: {}
+    post:
+      tags:
+      - Subscriptions
+      summary: Updates or Creates a Subscription
+      description: Updates a subscription by id or creates new if no id is set
+      requestBody:
+        description: The subscription to create/update.
+        content:
+          '*/*':
+            schema:
+              type: object
+              properties:
                 user_id:
-                    type: integer
+                  type: integer
+                status:
+                  type: string
                 membership_id:
-                    type: integer
-                coupon_id:
-                    type: integer
-                period:
-                    type: integer
-                period_type:
-                    type: integer
-                renew:
-                    type: boolean
-                status:
-                    type: string
-                created_at:
-                    type: string
-                expires_at:
-                    type: string
-        Transaction:
-            properties:
-                id:
-                    type: integer
-                subscription_id:
-                    type: integer
-                coupon_id:
-                    type: integer
+                  type: string
                 price:
+                  type: integer
+                tax_enabled:
+                  type: boolean
+        required: false
+      responses:
+        "200":
+          description: Successful response
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Subscription'
+      x-codegen-request-body-name: subscription
+    delete:
+      tags:
+      - Subscriptions
+      summary: Delete a subscription by ID
+      description: Allows a subscription to be deleted via an api endpoint by ID
+      parameters:
+      - name: subscriptionId
+        in: query
+        description: The ID of the subscription
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Successfully deleted
+          content:
+            '*/*':
+              schema:
+                type: boolean
+        "404":
+          description: No subscription was found/specified
+          content: {}
+  '/v1/transactions':
+    post:
+      tags:
+      - Transactions
+      summary: Updates or Creates a Transaction
+      requestBody:
+        description: The transaction to create/update
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/Transaction'
+        required: false
+      responses:
+        "200":
+          description: Successfully created/updated
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Transaction'
+      x-codegen-request-body-name: transaction
+    delete:
+      tags:
+      - Transactions
+      summary: Delete a transaction by ID
+      description: Allows a transaction to be deleted via an api endpoint by ID
+      parameters:
+      - name: transactionId
+        in: query
+        description: The ID of the transaction
+        required: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: Successfully deleted
+          content:
+            '*/*':
+              schema:
+                type: boolean
+        "404":
+          description: No transaction was found/specified
+          content: {}
+  '/v1/members':
+    get:
+      tags:
+      - Members
+      summary: Get a member by search term (Admin)
+      description: Returns an array of WP_User object
+      parameters:
+      - name: search
+        in: query
+        description: The term of the member to retrieve.
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Successful response
+          content:
+            '*/*':
+              schema:
+                type: object
+                properties:
+                  totalCount:
                     type: integer
-                total:
-                    type: integer
-                tax_amount:
-                    type: integer
-                tax_rate:
-                    type: integer
-                tax_class:
-                    type: string
-                gateway_type:
-                    type: string
-                prorated:
-                    type: boolean
-                type:
-                    type: string
-                renew:
-                    type: boolean
-                payment_id:
-                    type: string
-                status:
-                    type: string
-                created_at:
-                    type: string
-                expires_at:
-                    type: string
-        Member:
-            properties:
-                id:
-                    type: integer
+                    description: The amount of members found
+                  subscriptions:
+                    $ref: '#/components/schemas/Member'
+        "400":
+          description: Bad Request - Invalid ID or query format/empty.
+          content: {}
+        "404":
+          description: Not Found
+          content: {}
+        "500":
+          description: Member search failed
+          content: {}
+  '/v1/auth/login':
+    post:
+      tags:
+      - Authentication
+      summary: User authentication
+      description: This endpoint authenticates a user based on email, password, and other parameters.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Authentication failed due to invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/v1/auth/forgot':
+    post:
+      tags:
+      - Authentication
+      summary: Password reset request
+      description: Accepts a user's email and sends a password reset link if the user exists.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: Password reset link sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessForgotPasswordResponse'
+        '400':
+          description: Error occurred during the process
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Insufficient details provided or email not exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/v1/auth/reset':
+    post:
+      tags:
+      - Authentication
+      summary: Password reset confirmation
+      description: Accepts a reset key, user login, and new password to reset the user's password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Passwords do not match or other error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Insufficient details provided or invalid key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/v1/auth/verify':
+    post:
+      tags:
+      - Verification
+      summary: Generate and send a verification token
+      description: Generates a verification token for a user and sends it via email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationRequest'
+      responses:
+        '200':
+          description: Verification code or link sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Not a valid request or user not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+      - Verification
+      summary: Verify a received token
+      description: Verifies a received verification token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenVerificationRequest'
+      responses:
+        '200':
+          description: Token verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Not a valid request, invalid code, or user not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/v1/auth/account/password':
+    delete:
+      tags:
+      - Account Password
+      summary: Remove the password for password-less login
+      description: Removes the current password to enable password-less login via a magic link.
+      responses:
+        '200':
+          description: Password removed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthorized or invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+      - Account Password
+      summary: Set a new password
+      description: Allows a user to re-enable password authentication by setting a new password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+      responses:
+        '200':
+          description: Password set successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Passwords do not match or empty
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+      - Account Password
+      summary: Change the current password
+      description: Updates the user's current password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Passwords do not match or incorrect current password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                
+  '/v1/auth/account/profile':
+    post:
+      tags:
+      - Account
+      summary: Update user profile
+      description: Updates a user's profile with provided fields, including custom metadata.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdateRequest'
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthorized, invalid email, or no user found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  '/v1/auth/account/subscriptions':
+    get:
+      tags:
+      - Account
+      summary: Get user subscriptions
+      description: Fetches the subscriptions associated with the authenticated user.
+      responses:
+        '200':
+          description: Subscriptions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subscription'
+        '401':
+          description: Unauthorized or not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                
+  '/v1/auth/signup/check-coupon':
+    get:
+      tags:
+      - Signup
+      summary: Check coupon validity
+      description: Checks if a coupon is valid for the user and returns coupon data if valid.
+      parameters:
+        - in: query
+          name: coupon
+          required: true
+          schema:
+            type: string
+          description: The coupon code to check.
+      responses:
+        '200':
+          description: Coupon is valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CouponResponse'
+        '401':
+          description: Coupon is not valid or usage limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No coupon found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  '/v1/auth/signup/check-membership-price':
+    get:
+      tags:
+      - Signup
+      summary: Check membership price
+      description: Checks if the displayed price for a membership matches the actual price.
+      parameters:
+        - in: query
+          name: coupon
+          schema:
+            type: string
+          description: Coupon code, if any.
+        - in: query
+          name: display_price
+          schema:
+            type: number
+          description: Displayed price to be verified.
+        - in: query
+          name: total_price
+          schema:
+            type: number
+          description: Total price, including any discounts.
+        - in: query
+          name: gateway
+          schema:
+            type: string
+          description: Payment gateway being used.
+        - in: query
+          name: membership_id
+          schema:
+            type: integer
+          description: ID of the membership.
+        - in: query
+          name: user_id
+          schema:
+            type: integer
+          description: User ID for validation.
+      responses:
+        '200':
+          description: Price matches successfully
+        '401':
+          description: Unauthorized or membership/gateway invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  '/v1/auth/signup/complete':
+    post:
+      tags:
+      - Signup
+      summary: Complete the signup process
+      description: Finalizes the signup process by verifying payment and transaction details.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteSignupRequest'
+      responses:
+        '200':
+          description: Signup completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignupCompleteResponse'
+        '400':
+          description: Invalid data or request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  '/v1/auth/signup/start':
+    post:
+      tags:
+      - Signup
+      summary: Start the signup process
+      description: Initiates the signup process, creating a subscription and transaction record.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartSignupRequest'
+      responses:
+        '200':
+          description: Signup process started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignupStartResponse'
+        '400':
+          description: Invalid request or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  
+  '/v1/auth/signup':
+    post:
+      tags:
+      - Signup
+      summary: User Signup
+      description: Creates a new user account with a temporary password and sends an activation email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '200':
+          description: Signup successful, check email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Invalid email or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                
+  '/v1/gateway/stripe/create-payment-intent':
+    post:
+      summary: Create Stripe Payment Intent
+      description: Creates a payment intent in Stripe with specified amount and currency.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentIntentRequest'
+      responses:
+        '200':
+          description: Payment intent created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentIntentResponse'
+        '401':
+          description: Invalid request or missing parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                
+components:
+  schemas:
+    SignupRequest:
+      type: object
+      required:
+        - user_email
+      properties:
+        user_email:
+          type: string
+          format: email
+          description: Email address for the new account.
+          
+    ProfileUpdateRequest:
+      type: object
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProfileField'
+        accountSetup:
+          type: boolean
+          description: Indicates if this update is part of account setup.
+
+    ProfileField:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Field name to update.
+        value:
+          type: string
+          description: New value for the field.
+
+    SignupStartResponse:
+      type: object
+      properties:
+        subscription:
+          type: object
+          additionalProperties: true
+          description: Details of the subscription created.
+        transaction:
+          type: object
+          additionalProperties: true
+          description: Details of the transaction created.
+          
+    CreatePaymentIntentRequest:
+      type: object
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          type: number
+          format: float
+          description: Amount for which the payment intent is to be created.
+        currency:
+          type: string
+          description: Currency in which the amount is specified.
+
+    PaymentIntentResponse:
+      type: object
+      properties:
+        client_secret:
+          type: string
+          description: Client secret key generated for the payment intent.
+          
+    StartSignupRequest:
+      type: object
+      properties:
+        gateway:
+          type: string
+          description: Payment gateway to be used.
+        display_price:
+          type: number
+          description: Displayed price for the subscription.
+        membership_id:
+          type: integer
+          description: Membership ID to be subscribed to.
+        total_price:
+          type: number
+          description: Total price including tax and discounts.
+        user_id:
+          type: integer
+          description: User ID initiating the signup.
+        currency:
+          type: string
+          description: Currency for the transaction.
+        coupon:
+          type: string
+          description: Coupon code used, if any.
+        tax:
+          type: object
+          properties:
+            amount:
+              type: number
+            rate:
+              type: number
+          description: Tax details.
+        paypal_orderId:
+          type: string
+          description: PayPal Order ID, if using PayPal.
+    
+    CompleteSignupRequest:
+      type: object
+      properties:
+        gateway:
+          type: string
+          description: Payment gateway used.
+        transaction_id:
+          type: integer
+          description: Transaction ID for validation.
+        subscription_id:
+          type: integer
+          description: Subscription ID related to the transaction.
+        paymentIntent:
+          type: object
+          additionalProperties: true
+          description: Payment intent details (specifically for Stripe).
+
+    SignupCompleteResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Status of the signup process.
+        transaction:
+          type: object
+          additionalProperties: true
+          description: Details of the transaction.
+          
+    CouponResponse:
+      type: object
+      properties:
+        coupon:
+          type: string
+          description: The coupon code.
+        type:
+          type: string
+          description: Type of the coupon.
+        value:
+          type: string
+          description: Value or discount provided by the coupon.
+        description:
+          type: string
+          description: Description of the coupon.
+          
+    VerificationRequest:
+      type: object
+      properties:
+        action:
+          type: string
+          description: The action for which verification is requested.
+        type:
+          type: string
+          description: The type of verification (code or link).
+        expiry:
+          type: string
+          description: Time to expiry of the token.
+          
+    SetPasswordRequest:
+      type: object
+      required:
+        - password
+        - confirm_password
+      properties:
+        password:
+          type: string
+          format: byte
+          description: The new password (base64 encoded).
+        confirm_password:
+          type: string
+          format: byte
+          description: Confirmation of the new password (base64 encoded).
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - current_password
+        - password
+        - confirm_password
+      properties:
+        current_password:
+          type: string
+          format: byte
+          description: The current password (base64 encoded).
+        password:
+          type: string
+          format: byte
+          description: The new password (base64 encoded).
+        confirm_password:
+          type: string
+          format: byte
+          description: Confirmation of the new password (base64 encoded).
+
+    TokenVerificationRequest:
+      type: object
+      properties:
+        action:
+          type: string
+          description: The action associated with the verification.
+        code:
+          type: string
+          description: The verification code to be verified.
+          
+    PasswordResetRequest:
+      type: object
+      required:
+        - key
+        - user_login
+        - password
+        - confirm_password
+      properties:
+        key:
+          type: string
+          description: The reset key provided for password reset.
+        user_login:
+          type: string
+          description: The user's login name.
+        password:
+          type: string
+          description: The new password.
+        confirm_password:
+          type: string
+          description: Confirmation of the new password.
+          
+    Subscription:
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        membership_id:
+          type: integer
+        coupon_id:
+          type: integer
+        period:
+          type: integer
+        period_type:
+          type: integer
+        renew:
+          type: boolean
+        status:
+          type: string
+        created_at:
+          type: string
+        expires_at:
+          type: string
+    Transaction:
+      properties:
+        id:
+          type: integer
+        subscription_id:
+          type: integer
+        coupon_id:
+          type: integer
+        price:
+          type: integer
+        total:
+          type: integer
+        tax_amount:
+          type: integer
+        tax_rate:
+          type: integer
+        tax_class:
+          type: string
+        gateway_type:
+          type: string
+        prorated:
+          type: boolean
+        type:
+          type: string
+        renew:
+          type: boolean
+        payment_id:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+        expires_at:
+          type: string
+    Member:
+      properties:
+        id:
+          type: integer
+          
+    LoginRequest:
+      type: object
+      required:
+        - user_login
+        - user_password
+      properties:
+        user_login:
+          type: string
+          format: email
+          description: The user's email address.
+        user_password:
+          type: string
+          description: The user's password.
+        type:
+          type: string
+          description: The type of authentication.
+        check:
+          type: boolean
+          description: Flag to indicate a check for user existence.
+        remember:
+          type: boolean
+          description: Remember user login.
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates successful operation.
+        login:
+          type: boolean
+          description: Indicates a successful login.
+        message:
+          type: string
+          description: Descriptive message regarding the operation.
+        authType:
+          type: string
+          description: Type of authentication (password or password-less).
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates failure of the operation.
+        message:
+          type: string
+          description: Error message explaining the reason for failure.
+          
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: The user's email address for password reset.
+
+    SuccessForgotPasswordResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Indicates successful operation.
+        message:
+          type: string
+          description: Descriptive message regarding the operation.
+        resetLink:
+          type: string
+          format: uri
+          description: The URL for password reset.
+  securitySchemes:
+    NonceAuthorization:
+      type: apiKey
+      name: X-WP-Nonce
+      in: header
